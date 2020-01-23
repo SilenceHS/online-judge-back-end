@@ -3,7 +3,10 @@ from django.db.models import Q
 from django.http import JsonResponse
 
 from online_judge_back_end.models import User
-
+######DO NOT INSTALL Crypto!!!!!!######
+#######please use 'pip install pycryptodome'######
+from Crypto.Cipher import PKCS1_v1_5 as Cipher_pkcs1_v1_5
+from Crypto.PublicKey import RSA
 
 def login(request):
     u=User.objects.filter(Q(username=request.GET.get('username')) | Q(email=request.GET.get('username')),password=request.GET.get('password'))
