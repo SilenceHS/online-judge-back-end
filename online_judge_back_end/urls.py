@@ -18,6 +18,7 @@ from django.urls import path
 from online_judge_back_end import views
 urlpatterns = [
     path('api/login/', views.login),
+    path('api/register/', views.firstregister),
     path('admin/', admin.site.urls),
 
 ]
