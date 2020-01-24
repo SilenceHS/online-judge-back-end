@@ -151,6 +151,14 @@ USE_L10N = True
 
 USE_TZ = True
 
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.qq.com'
+EMAIL_PORT = 465  # 端口号
+EMAIL_HOST_USER = '5724924@qq.com'  # 邮箱帐号
+EMAIL_HOST_PASSWORD = 'gnkczmpagmikbhge'  # 邮箱密码
+EMAIL_FROM='在线判题系统 <5724924@qq.com>'
+EMAIL_USE_SSL=True
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.0/howto/static-files/

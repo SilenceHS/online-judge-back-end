@@ -19,6 +19,7 @@ from online_judge_back_end import views
 urlpatterns = [
     path('api/login/', views.login),
     path('api/register/', views.firstregister),
+    path('api/active/<str:key>', views.active),
     path('admin/', admin.site.urls),
 
 ]
