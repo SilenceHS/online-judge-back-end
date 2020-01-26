@@ -86,7 +86,10 @@ def active(request,key):
     try:
         aesMsg=str(base64.decodebytes(key.encode('utf-8')),encoding='utf-8')
         userInfo=json.loads(decryptAES(aesMsg))
-        u=User(userInfo['username'],userInfo['email'],userInfo['password'],userInfo['type'])
+        u=User.objects.filter(Q(username=userInfo['username'])|Q(email=userInfo['email']))
+        if len(u)!=0:
+            raise Exception("重复注册！")
+        u=User(username=userInfo['username'],email=userInfo['email'],password=userInfo['password'],type=userInfo['type'])
         u.save()
     except:
         print('解密失败')
@@ -99,7 +102,7 @@ def mail(receiver, key):
         message=''
         html_message = '\
                 <h2>欢迎注册在线判题系统, 离注册完成还有最后一步</h2>\
-                <p><a href="http://'+front_end_ip+':'+front_end_port+'/#/active/'+key + '">点击此处以激活账号</a></p>\
+                <p><a href="http://'+front_end_ip+':'+front_end_port+'/#/active/?key='+key + '">点击此处以激活账号</a></p>\
                 <h2>注意,此链接仅可使用一次</h2>\
                 <h2>如果这并不是你本人操作, 请忽略这封邮件</h2>'
         sender='5724924@qq.com'
