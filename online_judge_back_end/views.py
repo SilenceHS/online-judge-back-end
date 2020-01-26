@@ -53,6 +53,7 @@ def login(request):
     message = {"status": '401'}#401失败
     if len(u) != 0:
         message["status"]='200'#200成功
+        message['user']={'username':u[0].username,'avatar_url':'http://'+back_end_ip+':'+back_end_port+'/static/avatar/1.png'}
     return JsonResponse(message)
 
 def firstregister(request):
