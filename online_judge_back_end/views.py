@@ -1,10 +1,9 @@
 import json
-
 from django.db.models import Q
 from django.http import JsonResponse
 from django.core.mail import send_mail
 
-from online_judge_back_end.models import User
+from online_judge_back_end.models import User, Quiz, Answerlist
 ######DO NOT INSTALL Crypto!!!!!!######
 #######please use 'pip install pycryptodome'######
 import base64
@@ -52,8 +51,11 @@ def login(request):
     u=User.objects.filter(Q(username=request.GET.get('username')) | Q(email=request.GET.get('username')),password=request.GET.get('password'))
     message = {"status": '401'}#401失败
     if len(u) != 0:
+        avatar=u[0].avatar
+        if u[0].avatar==None:
+            avatar='default.png'
         message["status"]='200'#200成功
-        message['user']={'username':u[0].username,'avatar_url':'http://'+back_end_ip+':'+back_end_port+'/static/avatar/1.png'}
+        message['user']={'username':u[0].username,'avatar_url':'http://'+back_end_ip+':'+back_end_port+'/static/avatar/'+avatar}
     return JsonResponse(message)
 
 def firstregister(request):
@@ -113,6 +115,23 @@ def mail(receiver, key):
         print(err)
         ret = False
     return ret
+
+def quizlist(request,courseid,username):
+    message={"status":404,"quizlist":[]}
+    if courseid=="0":
+        quizlist=Quiz.objects.filter(courseid=0)
+        for i in quizlist:
+            userr=User.objects.filter(username=username)
+            userr[0].id
+            status=Answerlist.objects.filter(userid=userr[0].id,status="AC")
+            if len(status) != 0:
+                status="AC"
+            else:
+                status=""
+            message["quizlist"].append({"id":i.id,"name":i.name,"level":i.level,"url":i.url,"status":status})
+        message["status"]=200
+    return JsonResponse(message)
+
 
 
 
