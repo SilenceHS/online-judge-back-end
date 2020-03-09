@@ -1,4 +1,8 @@
 import json
+import string
+import random
+
+from django.core import serializers
 from django.db.models import Q
 from django.http import JsonResponse
 from django.core.mail import send_mail
@@ -46,6 +50,9 @@ def decryptAES(text):
     #执行解密密并转码返回str
     decrypted_text = str(aes.decrypt(base64_decrypted),encoding='utf-8').replace('\0','')
     return decrypted_text
+
+def urlGenerator(size=32, chars=string.ascii_letters + string.digits):
+    return ''.join(random.choice(chars) for _ in range(size))
 
 def login(request):
     u=User.objects.filter(Q(username=request.GET.get('username')) | Q(email=request.GET.get('username')),password=request.GET.get('password'))
@@ -131,6 +138,17 @@ def quizlist(request,courseid,username):
             message["quizlist"].append({"id":i.id,"name":i.name,"level":i.level,"url":i.url,"status":status})
         message["status"]=200
     return JsonResponse(message)
+
+def quiz(request,courseid,quizurl,username):
+    message = {"status": 404, "quiz":{}}
+    if courseid=="0":
+        quiz=Quiz.objects.filter(url=quizurl)
+        if len(quiz)==0:
+            return JsonResponse(message)
+        message["quiz"]=json.loads(serializers.serialize("json",quiz))
+        message["status"]=200
+        return JsonResponse(message)
+
 
 
 
