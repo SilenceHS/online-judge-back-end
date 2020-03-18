@@ -1,7 +1,7 @@
 import json
 import string
 import random
-
+import time, datetime
 from django.core import serializers
 from django.db.models import Q
 from django.http import JsonResponse
@@ -139,7 +139,7 @@ def quizlist(request,courseid,username):
         message["status"]=200
     return JsonResponse(message)
 
-def quiz(request,courseid,quizurl,username):
+def getquiz(request,courseid,quizurl,username):
     message = {"status": 404, "quiz":{}}
     if courseid=="0":
         quiz=Quiz.objects.filter(url=quizurl)
@@ -148,6 +148,25 @@ def quiz(request,courseid,quizurl,username):
         message["quiz"]=json.loads(serializers.serialize("json",quiz))
         message["status"]=200
         return JsonResponse(message)
+
+def postquiz(request):
+    message = {"status": '200'}
+    code=request.POST.get('code')
+    username=request.POST.get('username')
+    quizurl=request.POST.get('quizurl')
+    language=request.POST.get('language')
+    tempid=urlGenerator
+    print(code)
+    print(username)
+    print(quizurl)
+    print(language)
+    timestamp=str(int(time.time()))
+    if(language=='Python3'):
+        f=open(username+'_'+quizurl+'_'+timestamp+'.py','w')
+        f.writelines(code)
+        f.close()
+    return JsonResponse(message)
+
 
 
 
