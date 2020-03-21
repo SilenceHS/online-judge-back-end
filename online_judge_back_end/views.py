@@ -6,8 +6,12 @@ from django.core import serializers
 from django.db.models import Q
 from django.http import JsonResponse
 from django.core.mail import send_mail
-
+from redis import StrictRedis
 from online_judge_back_end.models import User, Quiz, Answerlist
+import os
+import redis
+import threading
+from online_judge_back_end import judgeCore
 ######DO NOT INSTALL Crypto!!!!!!######
 #######please use 'pip install pycryptodome'######
 import base64
@@ -15,8 +19,11 @@ from Crypto.Cipher import AES
 
 front_end_ip='localhost'
 front_end_port='9012'
-back_end_ip='localhost'
+back_end_ip='palipo.cn'
 back_end_port='8000'
+
+quizqueueroot='/home/runact/quiz_queue/'
+testcaseroot='/home/runact/test_case/'
 
 '''
 采用AES对称加密算法
@@ -150,22 +157,100 @@ def getquiz(request,courseid,quizurl,username):
         return JsonResponse(message)
 
 def postquiz(request):
-    message = {"status": '200'}
+    message = {"status": '200',"key":""}
     code=request.POST.get('code')
     username=request.POST.get('username')
     quizurl=request.POST.get('quizurl')
     language=request.POST.get('language')
-    tempid=urlGenerator
-    print(code)
-    print(username)
-    print(quizurl)
-    print(language)
+    tempid=urlGenerator()
     timestamp=str(int(time.time()))
-    if(language=='Python3'):
-        f=open(username+'_'+quizurl+'_'+timestamp+'.py','w')
-        f.writelines(code)
-        f.close()
+    timelimit=0
+    memorylimit=0
+    fileformat=""
+    if language=='Python3':
+        fileformat=".py"
+    if language == 'Java':
+        fileformat = ".java"
+    if language=="C":
+        fileformat = ".c"
+    if language == "C++":
+        fileformat = ".cpp"
+    filename=quizqueueroot+username + '_' + quizurl + '_' + timestamp + fileformat
+    f = open(filename, 'w')
+    f.writelines(code)
+    f.close()
+    redis = StrictRedis(host='palipo.cn', port=6379, db=0, password='fhffhf')
+    quiz=Quiz.objects.filter(url=quizurl)
+    if len(quiz)!=0:
+        timelimit=quiz[0].timelimit
+        memorylimit=quiz[0].memorylimit
+    user=User.objects.filter(username=username)
+    redis_queue={'userid':user[0].id,'filename':filename,'language':language,'tempid':tempid,'quizurl':quizurl,'timelimit':timelimit,'memorylimit':memorylimit,'testcase':[]}
+
+    testcasecount=1
+    while 1:
+        if os.path.exists(testcaseroot+quizurl+'/'+str(testcasecount)+".in"):
+            redis_queue['testcase'].append({'input': testcaseroot+quizurl+"/"+str(testcasecount)+'.in','output': testcaseroot+quizurl+"/"+str(testcasecount)+'.out',})
+            testcasecount+=1
+        else:
+            break
+    redis.lpush('oj',str(redis_queue))
+    message['key']=tempid
     return JsonResponse(message)
+
+def gettempstatus(request):
+    return
+#########################
+pool = redis.ConnectionPool(host='palipo.cn', port=6379,db=0, password='fhffhf')#redis连接池
+print("sb110")
+
+class judgeThread (threading.Thread):
+    def __init__(self):
+        threading.Thread.__init__(self)
+    def run(self):
+        #print ("开始线程：")
+        judge()
+       # print ("退出线程：")
+def judge():
+    while 1:
+        static_redis=redis.Redis(connection_pool=pool)
+        receiver=static_redis.brpop('oj', 5)
+        if receiver != None:
+            receiver=eval(receiver[1])
+            judgeCore.run(receiver,pool)
+
+class redisToMysqlThread (threading.Thread):
+    def __init__(self):
+        threading.Thread.__init__(self)
+    def run(self):
+        save()
+
+def save():
+    while 1:
+        static_redis=redis.Redis(connection_pool=pool)
+        keys=static_redis.hkeys('result')
+        if len(keys)!=0:
+            for i in keys:
+                print(i)
+                result=static_redis.hget('result',i)
+                print(result)
+                static_redis.hdel('result',i)
+                result=eval(result)
+                answerList=Answerlist(userid=result['userid'],
+                                      code=result['code'],
+                                      language=result['language'],
+                                      status=result['status'],
+                                      date=result['date'],
+                                      usetime=result['usetime'],
+                                      usememory=result['usememory'])
+                answerList.save()
+        time.sleep(3)
+thread1 = judgeThread()
+thread1.start()
+thread1.daemon
+thread2 = redisToMysqlThread()
+thread2.start()
+thread2.daemon
 
 
 

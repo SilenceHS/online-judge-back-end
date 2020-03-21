@@ -113,7 +113,7 @@ DATABASES = {
         'HOST':'localhost',
         'PORT':'3306',
         'USER':'root',
-        'PASSWORD':'root'
+        'PASSWORD':'fhf+-*374544973'
 
     }
 }
@@ -143,13 +143,13 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Shanghai'
 
 USE_I18N = True
 
 USE_L10N = True
 
-USE_TZ = True
+USE_TZ = False
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.qq.com'
