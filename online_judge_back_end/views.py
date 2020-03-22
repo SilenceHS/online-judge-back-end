@@ -25,6 +25,8 @@ back_end_port='8000'
 quizqueueroot='/home/runact/quiz_queue/'
 testcaseroot='/home/runact/test_case/'
 
+pool = redis.ConnectionPool(host='palipo.cn', port=6379,db=0, password='fhffhf')#redis连接池
+
 '''
 采用AES对称加密算法
 '''
@@ -136,10 +138,9 @@ def quizlist(request,courseid,username):
         quizlist=Quiz.objects.filter(courseid=0)
         for i in quizlist:
             userr=User.objects.filter(username=username)
-            userr[0].id
-            status=Answerlist.objects.filter(userid=userr[0].id,status="AC")
+            status=Answerlist.objects.filter(userid=userr[0].id,status="ACCEPTED",quizid=i.id)
             if len(status) != 0:
-                status="AC"
+                status="ACCEPTED"
             else:
                 status=""
             message["quizlist"].append({"id":i.id,"name":i.name,"level":i.level,"url":i.url,"status":status})
@@ -152,12 +153,18 @@ def getquiz(request,courseid,quizurl,username):
         quiz=Quiz.objects.filter(url=quizurl)
         if len(quiz)==0:
             return JsonResponse(message)
+        answerList=Answerlist.objects.filter(quizid=quiz[0].id,status="ACCEPTED")
+        if len(answerList)!=0:
+            message["accepted"]=True
+        else:
+            message["accepted"]=False
         message["quiz"]=json.loads(serializers.serialize("json",quiz))
         message["status"]=200
+
         return JsonResponse(message)
 
 def postquiz(request):
-    message = {"status": '200',"key":""}
+    message = {"status": '200',"tempid":""}
     code=request.POST.get('code')
     username=request.POST.get('username')
     quizurl=request.POST.get('quizurl')
@@ -179,7 +186,7 @@ def postquiz(request):
     f = open(filename, 'w')
     f.writelines(code)
     f.close()
-    redis = StrictRedis(host='palipo.cn', port=6379, db=0, password='fhffhf')
+    static_redis = redis.Redis(connection_pool=pool)
     quiz=Quiz.objects.filter(url=quizurl)
     if len(quiz)!=0:
         timelimit=quiz[0].timelimit
@@ -194,15 +201,21 @@ def postquiz(request):
             testcasecount+=1
         else:
             break
-    redis.lpush('oj',str(redis_queue))
-    message['key']=tempid
+    static_redis.lpush('oj',str(redis_queue))
+    message['tempid']=tempid
     return JsonResponse(message)
 
 def gettempstatus(request):
-    return
+    tempid = request.POST.get('tempid')
+    static_redis = redis.Redis(connection_pool=pool)
+    result = static_redis.hget('result',tempid)
+    if  result!=None:
+        result=eval(result)
+        print(result)
+        return JsonResponse({"status": '200', 'result':result['status']})
+    return JsonResponse({"status": '205'})
 #########################
-pool = redis.ConnectionPool(host='palipo.cn', port=6379,db=0, password='fhffhf')#redis连接池
-print("sb110")
+
 
 class judgeThread (threading.Thread):
     def __init__(self):
@@ -214,7 +227,7 @@ class judgeThread (threading.Thread):
 def judge():
     while 1:
         static_redis=redis.Redis(connection_pool=pool)
-        receiver=static_redis.brpop('oj', 5)
+        receiver=static_redis.brpop('oj', 3)
         if receiver != None:
             receiver=eval(receiver[1])
             judgeCore.run(receiver,pool)
@@ -230,13 +243,14 @@ def save():
         static_redis=redis.Redis(connection_pool=pool)
         keys=static_redis.hkeys('result')
         if len(keys)!=0:
+            time.sleep(10)
             for i in keys:
                 print(i)
                 result=static_redis.hget('result',i)
                 print(result)
-                static_redis.hdel('result',i)
                 result=eval(result)
                 answerList=Answerlist(userid=result['userid'],
+                                      quizid=result['quizid'],
                                       code=result['code'],
                                       language=result['language'],
                                       status=result['status'],
@@ -244,6 +258,7 @@ def save():
                                       usetime=result['usetime'],
                                       usememory=result['usememory'])
                 answerList.save()
+                static_redis.hdel('result', i)
         time.sleep(3)
 thread1 = judgeThread()
 thread1.start()

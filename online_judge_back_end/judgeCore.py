@@ -12,6 +12,9 @@ from datetime import datetime
 # SEGMENTATION_FAULT
 # WRONG_ANSWER
 # SKIPPED
+from online_judge_back_end.models import Quiz
+
+
 def run(receiver,pool):
     static_redis=redis.Redis(connection_pool=pool)
 
@@ -22,7 +25,8 @@ def run(receiver,pool):
         'max-memory': int(receiver['memorylimit'])*1024,
         'testcase': receiver['testcase']
     }
-    result=''
+    result='ACCEPTED'
+    a=''
     try:
         a = ljudge.run(opts)
     except:
@@ -30,8 +34,9 @@ def run(receiver,pool):
     memory=0
     time=0
     print(a)
-    result = 'ACCEPTED'
-    if(a['compilation']['success'])==False:
+    if result=="COMPILATION_ERROR":
+        print("sb")
+    if result=="COMPILATION_ERROR" or a['compilation']['success']==False:
         result='COMPILATION_ERROR'
     else:
         for i in a['testcases']:
@@ -48,7 +53,9 @@ def run(receiver,pool):
                 time=i['time']
     memory/=1024
     time*=1000
+    quiz=Quiz.objects.filter(url=receiver['quizurl'])
     judge_result={'userid':receiver['userid'],
+                  'quizid':quiz[0].id,
             'code':receiver['filename'],
             'language':receiver['language'],
             'status':result,

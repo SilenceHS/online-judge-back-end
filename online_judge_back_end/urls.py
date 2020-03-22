@@ -23,6 +23,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/getquizlist/<str:courseid>/<str:username>',views.quizlist),
     path('api/getquiz/<str:courseid>/<str:quizurl>/<str:username>', views.getquiz),
-    path('api/postquiz/',views.postquiz)
+    path('api/postquiz/',views.postquiz),
+    path('api/gettempstatus/',views.gettempstatus)
 
 ]
