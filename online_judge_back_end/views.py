@@ -71,7 +71,7 @@ def login(request):
         if u[0].avatar==None:
             avatar='default.png'
         message["status"]='200'#200成功
-        message['user']={'username':u[0].username,'avatar_url':'http://'+back_end_ip+':'+back_end_port+'/static/avatar/'+avatar}
+        message['user']={'username':u[0].username,'avatar_url':'http://'+back_end_ip+':'+back_end_port+'/static/avatar/'+avatar,'type':u[0].type}
     return JsonResponse(message)
 
 def firstregister(request):
