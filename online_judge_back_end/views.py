@@ -22,8 +22,8 @@ front_end_port='9012'
 back_end_ip='palipo.cn'
 back_end_port='8000'
 
-quizqueueroot='/home/runact/quiz_queue/'
-testcaseroot='/home/runact/test_case/'
+quizQueueRoot='/home/runact/quiz_queue/'
+testCaseRoot='/home/runact/test_case/'
 
 pool = redis.ConnectionPool(host='palipo.cn', port=6379,db=0, password='fhffhf')#redis连接池
 
@@ -74,7 +74,7 @@ def login(request):
         message['user']={'username':u[0].username,'avatar_url':'http://'+back_end_ip+':'+back_end_port+'/static/avatar/'+avatar,'type':u[0].type}
     return JsonResponse(message)
 
-def firstregister(request):
+def firstRegister(request):
     message = {"status": '401', 'error': {'username':1,'email':1}}  # 401失败
     username=request.POST.get('username')
     email=request.POST.get('email')
@@ -132,7 +132,7 @@ def mail(receiver, key):
         ret = False
     return ret
 
-def quizlist(request,courseid,username):
+def quizList(request,courseid,username):
     message={"status":404,"quizlist":[]}
     if courseid=="0":
         quizlist=Quiz.objects.filter(courseid=0)
@@ -147,7 +147,7 @@ def quizlist(request,courseid,username):
         message["status"]=200
     return JsonResponse(message)
 
-def getquiz(request,courseid,quizurl,username):
+def getQuiz(request,courseid,quizurl,username):
     message = {"status": 404, "quiz":{}}
     if courseid=="0":
         quiz=Quiz.objects.filter(url=quizurl)
@@ -163,7 +163,7 @@ def getquiz(request,courseid,quizurl,username):
 
         return JsonResponse(message)
 
-def postquiz(request):
+def postQuiz(request):
     message = {"status": '200',"tempid":""}
     code=request.POST.get('code')
     username=request.POST.get('username')
@@ -205,7 +205,7 @@ def postquiz(request):
     message['tempid']=tempid
     return JsonResponse(message)
 
-def gettempstatus(request):
+def getTempStatus(request):
     tempid = request.POST.get('tempid')
     static_redis = redis.Redis(connection_pool=pool)
     result = static_redis.hget('result',tempid)
@@ -249,14 +249,14 @@ def save():
                 result=static_redis.hget('result',i)
                 print(result)
                 result=eval(result)
-                answerList=Answerlist(userid=result['userid'],
-                                      quizid=result['quizid'],
+                answerList=Answerlist(userid=result['userId'],
+                                      quizid=result['quizId'],
                                       code=result['code'],
                                       language=result['language'],
                                       status=result['status'],
                                       date=result['date'],
-                                      usetime=result['usetime'],
-                                      usememory=result['usememory'])
+                                      usetime=result['useTime'],
+                                      usememory=result['useMemory'])
                 answerList.save()
                 static_redis.hdel('result', i)
         time.sleep(3)

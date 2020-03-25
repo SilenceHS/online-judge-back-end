@@ -18,12 +18,12 @@ from django.urls import path
 from online_judge_back_end import views
 urlpatterns = [
     path('api/login/', views.login),
-    path('api/register/', views.firstregister),
+    path('api/register/', views.firstRegister),
     path('api/active/<str:key>', views.active),
     path('admin/', admin.site.urls),
-    path('api/getquizlist/<str:courseid>/<str:username>',views.quizlist),
-    path('api/getquiz/<str:courseid>/<str:quizurl>/<str:username>', views.getquiz),
-    path('api/postquiz/',views.postquiz),
-    path('api/gettempstatus/',views.gettempstatus)
+    path('api/getquizlist/<str:courseid>/<str:username>',views.quizList),
+    path('api/getquiz/<str:courseid>/<str:quizurl>/<str:username>', views.getQuiz),
+    path('api/postquiz/',views.postQuiz),
+    path('api/gettempstatus/',views.getTempStatus)
 
 ]
