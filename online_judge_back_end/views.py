@@ -12,6 +12,7 @@ import os
 import redis
 import threading
 from online_judge_back_end import judgeCore
+import re
 ######DO NOT INSTALL Crypto!!!!!!######
 #######please use 'pip install pycryptodome'######
 import base64
@@ -71,7 +72,7 @@ def login(request):
         if u[0].avatar==None:
             avatar='default.png'
         message["status"]='200'#200成功
-        message['user']={'username':u[0].username,'avatar_url':'http://'+back_end_ip+':'+back_end_port+'/static/avatar/'+avatar,'type':u[0].type}
+        message['user']={'userName':u[0].username,'avatar_url':'http://'+back_end_ip+':'+back_end_port+'/static/avatar/'+avatar,'type':u[0].type}
     return JsonResponse(message)
 
 def firstRegister(request):
@@ -133,9 +134,9 @@ def mail(receiver, key):
     return ret
 
 def quizList(request,courseid,username):
-    message={"status":404,"quizlist":[]}
-    if courseid=="0":
-        quizlist=Quiz.objects.filter(courseid=0)
+    message={"status":404,"quizList":[]}
+    if courseid=="1":
+        quizlist=Quiz.objects.filter(courseid=1)
         for i in quizlist:
             userr=User.objects.filter(username=username)
             status=Answerlist.objects.filter(userid=userr[0].id,status="ACCEPTED",quizid=i.id)
@@ -143,13 +144,13 @@ def quizList(request,courseid,username):
                 status="ACCEPTED"
             else:
                 status=""
-            message["quizlist"].append({"id":i.id,"name":i.name,"level":i.level,"url":i.url,"status":status})
+            message["quizList"].append({"id":i.id,"name":i.name,"level":i.level,"url":i.url,"status":status})
         message["status"]=200
     return JsonResponse(message)
 
 def getQuiz(request,courseid,quizurl,username):
     message = {"status": 404, "quiz":{}}
-    if courseid=="0":
+    if courseid=="1":
         quiz=Quiz.objects.filter(url=quizurl)
         if len(quiz)==0:
             return JsonResponse(message)
@@ -182,7 +183,7 @@ def postQuiz(request):
         fileformat = ".c"
     if language == "C++":
         fileformat = ".cpp"
-    filename=quizqueueroot+username + '_' + quizurl + '_' + timestamp + fileformat
+    filename=quizQueueRoot+username + '_' + quizurl + '_' + timestamp + fileformat
     f = open(filename, 'w')
     f.writelines(code)
     f.close()
@@ -196,8 +197,8 @@ def postQuiz(request):
 
     testcasecount=1
     while 1:
-        if os.path.exists(testcaseroot+quizurl+'/'+str(testcasecount)+".in"):
-            redis_queue['testcase'].append({'input': testcaseroot+quizurl+"/"+str(testcasecount)+'.in','output': testcaseroot+quizurl+"/"+str(testcasecount)+'.out',})
+        if os.path.exists(testCaseRoot+quizurl+'/'+str(testcasecount)+".in"):
+            redis_queue['testcase'].append({'input': testCaseRoot+quizurl+"/"+str(testcasecount)+'.in','output': testCaseRoot+quizurl+"/"+str(testcasecount)+'.out',})
             testcasecount+=1
         else:
             break
@@ -214,6 +215,37 @@ def getTempStatus(request):
         print(result)
         return JsonResponse({"status": '200', 'result':result['status']})
     return JsonResponse({"status": '205'})
+
+def addQuiz(request):
+    message={"status": '200'}
+    name=request.POST.get('name')
+    type=request.POST.get('type')
+    description=request.POST.get('description')
+    input=request.POST.get('input')
+    output=request.POST.get('output')
+    sampleinput=request.POST.get('sampleinput')
+    sampleoutput=request.POST.get('sampleoutput')
+    timelimit=request.POST.get('timelimit')
+    memorylimit=request.POST.get('memorylimit')
+    testcase=request.POST.get('testcase')
+    courseid=request.POST.get('courseid')
+    testCaseInput=[]
+    testCaseOutput = []
+    if courseid=="1" and type=='2':
+        quiz=Quiz(url=urlGenerator(),
+                  courseid=1,
+                  name=name,
+                  description=description,
+                  input=input,
+                  output=output,
+                  sampleinput=sampleinput,
+                  sampleoutput=sampleoutput,
+                  language=3,
+                  timelimit=timelimit,
+                  memorylimit=memorylimit)
+        #quiz.save()
+        return JsonResponse(message)
+
 #########################
 
 
@@ -249,14 +281,14 @@ def save():
                 result=static_redis.hget('result',i)
                 print(result)
                 result=eval(result)
-                answerList=Answerlist(userid=result['userId'],
-                                      quizid=result['quizId'],
+                answerList=Answerlist(userid=result['userid'],
+                                      quizid=result['quizid'],
                                       code=result['code'],
                                       language=result['language'],
                                       status=result['status'],
                                       date=result['date'],
-                                      usetime=result['useTime'],
-                                      usememory=result['useMemory'])
+                                      usetime=result['usetime'],
+                                      usememory=result['usememory'])
                 answerList.save()
                 static_redis.hdel('result', i)
         time.sleep(3)

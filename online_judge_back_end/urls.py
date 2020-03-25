@@ -24,6 +24,7 @@ urlpatterns = [
     path('api/getquizlist/<str:courseid>/<str:username>',views.quizList),
     path('api/getquiz/<str:courseid>/<str:quizurl>/<str:username>', views.getQuiz),
     path('api/postquiz/',views.postQuiz),
-    path('api/gettempstatus/',views.getTempStatus)
+    path('api/gettempstatus/',views.getTempStatus),
+    path('api/addquiz/',views.addQuiz)
 
 ]

@@ -9,8 +9,8 @@ from django.db import models
 
 
 class Answerlist(models.Model):
-    userid = models.IntegerField(blank=True, null=True)
-    quizid = models.IntegerField(blank=True, null=True)
+    userid = models.ForeignKey('User', models.CASCADE, db_column='userid', blank=True, null=True)
+    quizid = models.ForeignKey('Quiz', models.CASCADE, db_column='quizid', blank=True, null=True)
     code = models.TextField(blank=True, null=True)
     language = models.CharField(max_length=20, blank=True, null=True)
     status = models.CharField(max_length=30, blank=True, null=True)
@@ -18,14 +18,13 @@ class Answerlist(models.Model):
     usetime = models.IntegerField(blank=True, null=True)
     usememory = models.IntegerField(blank=True, null=True)
 
-
     class Meta:
         managed = False
         db_table = 'answerlist'
 
 
 class Course(models.Model):
-    teacherid = models.IntegerField(blank=True, null=True)
+    teacherid = models.ForeignKey('User', models.CASCADE, db_column='teacherid', blank=True, null=True)
     coursename = models.CharField(max_length=255, blank=True, null=True)
     detail = models.CharField(max_length=255, blank=True, null=True)
 
@@ -36,7 +35,7 @@ class Course(models.Model):
 
 class Quiz(models.Model):
     url = models.CharField(max_length=32, blank=True, null=True)
-    courseid = models.IntegerField(blank=True, null=True)
+    courseid = models.ForeignKey(Course, models.CASCADE, db_column='courseid', blank=True, null=True)
     name = models.CharField(max_length=255, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     input = models.TextField(blank=True, null=True)
@@ -66,8 +65,8 @@ class User(models.Model):
 
 
 class UserCourse(models.Model):
-    courseid = models.IntegerField(blank=True, null=True)
-    studentid = models.IntegerField(blank=True, null=True)
+    courseid = models.ForeignKey(Course, models.CASCADE, db_column='courseid', blank=True, null=True)
+    studentid = models.ForeignKey(User, models.CASCADE, db_column='studentid', blank=True, null=True)
 
     class Meta:
         managed = False

@@ -19,11 +19,11 @@ def run(receiver,pool):
     static_redis=redis.Redis(connection_pool=pool)
 
     opts = {
-        'user-code': receiver['fileName'],
-        'max-cpu-time': int(receiver['timeLimit'])/1000,
+        'user-code': receiver['filename'],
+        'max-cpu-time': int(receiver['timelimit'])/1000,
         'max-compiler-cpu-time': '10',
-        'max-memory': int(receiver['memoryLimit'])*1024,
-        'testcase': receiver['testCase']
+        'max-memory': int(receiver['memorylimit'])*1024,
+        'testcase': receiver['testcase']
     }
     result='ACCEPTED'
     a=''
@@ -54,16 +54,16 @@ def run(receiver,pool):
     memory/=1024
     time*=1000
     quiz=Quiz.objects.filter(url=receiver['quizurl'])
-    judge_result={'userId':receiver['userid'],
-                  'quizId':quiz[0].id,
+    judge_result={'userid':receiver['userid'],
+                  'quizid':quiz[0].id,
             'code':receiver['fileName'],
             'language':receiver['language'],
             'status':result,
             'date':datetime.now(),
-            'useTime':time,
-            'useMemory':memory
+            'usetime':time,
+            'usememory':memory
             }
-    static_redis.hset('result',receiver['tempId'], str(judge_result))
+    static_redis.hset('result',receiver['tempid'], str(judge_result))
 
 
 
