@@ -220,11 +220,11 @@ def addQuiz(request):
     message={"status": '200'}
     name=request.POST.get('name')
     type=request.POST.get('type')
-    description=request.POST.get('description')
-    input=request.POST.get('input')
-    output=request.POST.get('output')
-    sampleinput=request.POST.get('sampleinput')
-    sampleoutput=request.POST.get('sampleoutput')
+    description=request.POST.get('description').replace("\n","<br/>")
+    input=request.POST.get('input').replace("\n","<br/>")
+    output=request.POST.get('output').replace("\n","<br/>")
+    sampleinput=request.POST.get('sampleinput').replace("\n","<br/>")
+    sampleoutput=request.POST.get('sampleoutput').replace("\n","<br/>")
     timelimit=request.POST.get('timelimit')
     memorylimit=request.POST.get('memorylimit')
     testcase=request.POST.get('testcase')
@@ -296,8 +296,10 @@ def save():
                 result=static_redis.hget('result',i)
                 print(result)
                 result=eval(result)
-                answerList=Answerlist(userid=result['userid'],
-                                      quizid=result['quizid'],
+                user=User.objects.filter(id=result['userid'])
+                quiz=Quiz.objects.filter(id=result['quizid'])
+                answerList=Answerlist(userid=user[0],
+                                      quizid=quiz[0],
                                       code=result['code'],
                                       language=result['language'],
                                       status=result['status'],
@@ -305,6 +307,7 @@ def save():
                                       usetime=result['usetime'],
                                       usememory=result['usememory'])
                 answerList.save()
+                print("保存成功")
                 static_redis.hdel('result', i)
         time.sleep(3)
 thread1 = judgeThread()
