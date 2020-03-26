@@ -7,7 +7,7 @@ from django.db.models import Q
 from django.http import JsonResponse
 from django.core.mail import send_mail
 from redis import StrictRedis
-from online_judge_back_end.models import User, Quiz, Answerlist
+from online_judge_back_end.models import User, Quiz, Answerlist, Course
 import os
 import redis
 import threading
@@ -232,8 +232,23 @@ def addQuiz(request):
     testCaseInput=[]
     testCaseOutput = []
     if courseid=="1" and type=='2':
-        quiz=Quiz(url=urlGenerator(),
-                  courseid=1,
+        pat = re.compile("(.*?)\n--InEnd--\n(.*?)\n--OutEnd--\n*", re.DOTALL)
+        testCaseList=pat.findall(testcase)
+        url=urlGenerator()
+        testCasePath=testCaseRoot+url
+        if not os.path.exists(testCasePath):
+            os.makedirs(testCasePath)
+        for i in range(len(testCaseList)):
+            f=open(testCasePath+"/"+str(i+1)+".in","w")
+            f.writelines(testCaseList[i][0])
+            f.close()
+            f = open(testCasePath + "/" + str(i + 1) + ".out", "w")
+            f.writelines(testCaseList[i][1])
+            f.close()
+
+        course=Course.objects.filter(id=1)
+        quiz=Quiz(url=url,
+                  courseid=course[0],
                   name=name,
                   description=description,
                   input=input,
@@ -243,7 +258,7 @@ def addQuiz(request):
                   language=3,
                   timelimit=timelimit,
                   memorylimit=memorylimit)
-        #quiz.save()
+        quiz.save()
         return JsonResponse(message)
 
 #########################

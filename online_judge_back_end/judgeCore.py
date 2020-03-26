@@ -56,7 +56,7 @@ def run(receiver,pool):
     quiz=Quiz.objects.filter(url=receiver['quizurl'])
     judge_result={'userid':receiver['userid'],
                   'quizid':quiz[0].id,
-            'code':receiver['fileName'],
+            'code':receiver['filename'],
             'language':receiver['language'],
             'status':result,
             'date':datetime.now(),
