@@ -229,6 +229,9 @@ def addQuiz(request):
     memorylimit=request.POST.get('memorylimit')
     testcase=request.POST.get('testcase')
     courseid=request.POST.get('courseid')
+    language=request.POST.get('language')
+    level = request.POST.get('level')
+    tag=request.POST.get('tag')
     testCaseInput=[]
     testCaseOutput = []
     if courseid=="1" and type=='2':
