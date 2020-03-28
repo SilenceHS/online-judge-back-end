@@ -155,8 +155,9 @@ def getQuiz(request,courseid,quizurl,username):
         quiz=Quiz.objects.filter(url=quizurl)
         if len(quiz)==0:
             return JsonResponse(message)
-        answerList=Answerlist.objects.filter(quizid=quiz[0].id,status="ACCEPTED")
-        if len(answerList)!=0:
+        user=User.objects.filter(username=username).first()
+        answerList=Answerlist.objects.filter(quizid=quiz[0].id,status="ACCEPTED",userid=user).first()
+        if answerList!=None:
             message["accepted"]=True
         else:
             message["accepted"]=False
@@ -239,8 +240,6 @@ def addQuiz(request):
     language=request.POST.get('language')
     level = request.POST.get('level')
     tag=request.POST.get('tag')
-    testCaseInput=[]
-    testCaseOutput = []
     if courseid=="1" and type=='2':
         pat = re.compile("(.*?)\n--InEnd--\n(.*?)\n--OutEnd--\n*", re.DOTALL)
         testCaseList=pat.findall(testcase)
@@ -318,23 +317,51 @@ def getModifyQuiz(request,courseId,quizUrl,userName):
     return JsonResponse(message)
 
 def modifyQuiz(request):
-    messag={'status':'200'}
-    name=request.POST.get('name')
-    type=request.POST.get('type')
-    description=request.POST.get('description').replace("\n","<br/>")
-    input=request.POST.get('input').replace("\n","<br/>")
-    output=request.POST.get('output').replace("\n","<br/>")
-    sampleinput=request.POST.get('sampleinput').replace("\n","<br/>")
-    sampleoutput=request.POST.get('sampleoutput').replace("\n","<br/>")
-    timelimit=request.POST.get('timelimit')
-    memorylimit=request.POST.get('memorylimit')
-    testcase=request.POST.get('testcase')
-    courseid=request.POST.get('courseid')
-    language=request.POST.get('language')
+    message = {"status": '200'}
+    name = request.POST.get('name')
+    type = request.POST.get('type')
+    description = request.POST.get('description').replace("\n", "<br/>")
+    input = request.POST.get('input').replace("\n", "<br/>")
+    output = request.POST.get('output').replace("\n", "<br/>")
+    sampleinput = request.POST.get('sampleinput').replace("\n", "<br/>")
+    sampleoutput = request.POST.get('sampleoutput').replace("\n", "<br/>")
+    timelimit = request.POST.get('timelimit')
+    memorylimit = request.POST.get('memorylimit')
+    testcase = request.POST.get('testcase')
+    courseid = request.POST.get('courseid')
+    language = request.POST.get('language')
     level = request.POST.get('level')
-    tag=request.POST.get('tag')
-    testCaseInput=[]
-    testCaseOutput = []
+    tag = request.POST.get('tag')
+    url = request.POST.get('url')
+    if courseid == "1" and type == '2':
+        pat = re.compile("(.*?)\n--InEnd--\n(.*?)\n--OutEnd--\n*", re.DOTALL)
+        testCaseList = pat.findall(testcase)
+        testCasePath = testCaseRoot + url
+        if os.path.exists(testCasePath):
+            shutil.rmtree(testCaseRoot + url)
+        os.makedirs(testCasePath)
+        for i in range(len(testCaseList)):
+            f = open(testCasePath + "/" + str(i + 1) + ".in", "w")
+            f.writelines(testCaseList[i][0])
+            f.close()
+            f = open(testCasePath + "/" + str(i + 1) + ".out", "w")
+            f.writelines(testCaseList[i][1])
+            f.close()
+
+        quiz=Quiz.objects.filter(url=url).first()
+        quiz.name=name
+        quiz.description = description
+        quiz.input = input
+        quiz.output = output
+        quiz.sampleinput = sampleinput
+        quiz.sampleoutput = sampleoutput
+        quiz.timelimit = timelimit
+        quiz.memorylimit = memorylimit
+        quiz.language = language
+        quiz.level = level
+        quiz.tag = tag
+        quiz.save()
+        return JsonResponse(message)
 
 #########################
 

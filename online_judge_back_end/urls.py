@@ -28,5 +28,5 @@ urlpatterns = [
     path('api/addquiz/',views.addQuiz),
     path('api/deleteQuiz/',views.deleteQuiz),
     path('api/getmodifyquiz/<str:courseId>/<str:quizUrl>/<str:userName>',views.getModifyQuiz),
-    path('api/gmodifyquiz/',views.modifyQuiz),
+    path('api/modifyquiz/',views.modifyQuiz),
 ]
