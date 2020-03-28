@@ -1,4 +1,5 @@
 import json
+import shutil
 import string
 import random
 import time, datetime
@@ -144,7 +145,7 @@ def quizList(request,courseid,username):
                 status="ACCEPTED"
             else:
                 status=""
-            message["quizList"].append({"id":i.id,"name":i.name,"level":i.level,"url":i.url,"status":status})
+            message["quizList"].append({"id":i.id,"name":i.name,"level":i.level,"url":i.url,"status":status,"tag":i.tag})
         message["status"]=200
     return JsonResponse(message)
 
@@ -183,6 +184,12 @@ def postQuiz(request):
         fileformat = ".c"
     if language == "C++":
         fileformat = ".cpp"
+    if language == "JavaScript":
+        fileformat = ".js"
+    if language == "Shell":
+        fileformat = ".sh"
+    if language == "Lua":
+        fileformat = ".lua"
     filename=quizQueueRoot+username + '_' + quizurl + '_' + timestamp + fileformat
     f = open(filename, 'w')
     f.writelines(code)
@@ -258,11 +265,76 @@ def addQuiz(request):
                   output=output,
                   sampleinput=sampleinput,
                   sampleoutput=sampleoutput,
-                  language=3,
+                  language=language,
+                  level=level,
                   timelimit=timelimit,
-                  memorylimit=memorylimit)
+                  memorylimit=memorylimit,
+                  tag=tag)
         quiz.save()
         return JsonResponse(message)
+def deleteQuiz(request):
+    message={'status':'200'}
+    qid=request.POST.get('id')
+    username=request.POST.get('username')
+    quiz=Quiz.objects.filter(id=qid)
+    user=User.objects.filter(username=username)
+    if len(user)==1 and user[0].type==2:
+        shutil.rmtree(testCaseRoot+quiz[0].url)
+        quiz[0].delete()
+        return JsonResponse(message)
+    message['status']='403'
+    return JsonResponse(message)
+
+def getModifyQuiz(request,courseId,quizUrl,userName):
+    message={'status':'200'}
+    quiz=Quiz.objects.filter(url=quizUrl)
+    message['name']=quiz[0].name
+    message['description'] = quiz[0].description.replace("<br/>","\n")
+    message['input'] = quiz[0].input.replace("<br/>","\n")
+    message['output'] = quiz[0].output.replace("<br/>","\n")
+    message['sampleinput'] = quiz[0].sampleinput.replace("<br/>","\n")
+    message['sampleoutput'] = quiz[0].sampleoutput.replace("<br/>","\n")
+    message['timelimit'] = quiz[0].timelimit
+    message['memorylimit'] = quiz[0].memorylimit
+    message['language'] = quiz[0].language
+    message['level'] = quiz[0].level
+    message['tag'] = quiz[0].tag
+
+    testcasecount = 1
+    testcase=""
+    while 1:
+        if os.path.exists(testCaseRoot + quizUrl + '/' + str(testcasecount) + ".in"):
+            f=open(testCaseRoot + quizUrl + '/' + str(testcasecount) + ".in","r")
+            input=f.read()
+            f.close()
+            testcase+=input+'\n--InEnd--\n'
+            f = open(testCaseRoot + quizUrl + '/' + str(testcasecount) + ".out", "r")
+            output=f.read()
+            testcase += output + '\n--OutEnd--\n'
+            testcasecount += 1
+        else:
+            break
+    message['testcase'] =testcase
+    return JsonResponse(message)
+
+def modifyQuiz(request):
+    messag={'status':'200'}
+    name=request.POST.get('name')
+    type=request.POST.get('type')
+    description=request.POST.get('description').replace("\n","<br/>")
+    input=request.POST.get('input').replace("\n","<br/>")
+    output=request.POST.get('output').replace("\n","<br/>")
+    sampleinput=request.POST.get('sampleinput').replace("\n","<br/>")
+    sampleoutput=request.POST.get('sampleoutput').replace("\n","<br/>")
+    timelimit=request.POST.get('timelimit')
+    memorylimit=request.POST.get('memorylimit')
+    testcase=request.POST.get('testcase')
+    courseid=request.POST.get('courseid')
+    language=request.POST.get('language')
+    level = request.POST.get('level')
+    tag=request.POST.get('tag')
+    testCaseInput=[]
+    testCaseOutput = []
 
 #########################
 
