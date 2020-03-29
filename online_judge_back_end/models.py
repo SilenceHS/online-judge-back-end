@@ -27,6 +27,8 @@ class Course(models.Model):
     teacherid = models.ForeignKey('User', models.CASCADE, db_column='teacherid', blank=True, null=True)
     coursename = models.CharField(max_length=255, blank=True, null=True)
     detail = models.CharField(max_length=255, blank=True, null=True)
+    url = models.CharField(max_length=7, blank=True, null=True)
+    teachername = models.CharField(max_length=10, blank=True, null=True)
 
     class Meta:
         managed = False
@@ -68,6 +70,7 @@ class User(models.Model):
 class UserCourse(models.Model):
     courseid = models.ForeignKey(Course, models.CASCADE, db_column='courseid', blank=True, null=True)
     studentid = models.ForeignKey(User, models.CASCADE, db_column='studentid', blank=True, null=True)
+    studentname = models.CharField(max_length=10, blank=True, null=True)
 
     class Meta:
         managed = False

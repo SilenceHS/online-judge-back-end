@@ -8,7 +8,7 @@ from django.db.models import Q
 from django.http import JsonResponse
 from django.core.mail import send_mail
 from redis import StrictRedis
-from online_judge_back_end.models import User, Quiz, Answerlist, Course
+from online_judge_back_end.models import User, Quiz, Answerlist, Course,UserCourse
 import os
 import redis
 import threading
@@ -134,9 +134,9 @@ def mail(receiver, key):
         ret = False
     return ret
 
-def quizList(request,courseid,username):
+def quizList(request,courseurl,username):
     message={"status":404,"quizList":[]}
-    if courseid=="1":
+    if courseurl=="loDjDEx":
         quizlist=Quiz.objects.filter(courseid=1)
         for i in quizlist:
             userr=User.objects.filter(username=username)
@@ -149,9 +149,9 @@ def quizList(request,courseid,username):
         message["status"]=200
     return JsonResponse(message)
 
-def getQuiz(request,courseid,quizurl,username):
+def getQuiz(request,courseurl,quizurl,username):
     message = {"status": 404, "quiz":{}}
-    if courseid=="1":
+    if courseurl=="loDjDEx":
         quiz=Quiz.objects.filter(url=quizurl)
         if len(quiz)==0:
             return JsonResponse(message)
@@ -363,9 +363,57 @@ def modifyQuiz(request):
         quiz.save()
         return JsonResponse(message)
 
+def getCourseList(request,userName,type):
+    message={'status':'200','courselist':[]}
+    if type=='1':
+        user=User.objects.filter(username=userName).first()
+        courseList=Course.objects.filter(teacherid=user)
+        for i in courseList:
+            peopleNum=len(UserCourse.objects.filter(courseid=i))
+            quizNum=len(Quiz.objects.filter(courseid=i))
+            message['courselist'].append({'coursename':i.coursename,'detail':i.detail,'url':i.url,'teachername':i.teachername,'peoplenum':peopleNum,'quiznum':quizNum})
+    if type==0:
+        pass
+    return JsonResponse(message)
+
+def modifyCourse(request):
+    # 要写用户验证
+    message={'status':'200'}
+    courseName=request.POST.get('coursename')
+    detail=request.POST.get('detail')
+    teacherName=request.POST.get('teachername')
+    url=request.POST.get('url')
+    course=Course.objects.filter(url=url).first()
+    course.coursename=courseName
+    course.detail=detail
+    course.teachername=teacherName
+    course.save()
+    return JsonResponse(message)
+
+def addCourse(request):
+    # 要写用户验证
+    message = {'status': '200'}
+    courseName = request.POST.get('coursename')
+    detail = request.POST.get('detail')
+    teacherName = request.POST.get('teachername')
+    userName = request.POST.get('username')
+    teacher=User.objects.filter(username=userName).first()
+    url = urlGenerator(7)
+    course = Course(coursename = courseName,detail = detail,teachername = teacherName,url=url,teacherid=teacher)
+    course.save()
+    message['newcourse']={'coursename':courseName,'detail':detail,'url':url,'teachername':teacherName,'peoplenum':0,'quiznum':0}
+    return JsonResponse(message)
+
+def deleteCourse(request):
+    #要写用户验证
+    message={'status':'200'}
+    url=request.POST.get('url')
+    course = Course.objects.filter(url=url).first()
+    course.delete()
+    return JsonResponse(message)
+
+
 #########################
-
-
 class judgeThread (threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
