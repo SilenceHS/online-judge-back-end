@@ -372,8 +372,20 @@ def getCourseList(request,userName,type):
             peopleNum=len(UserCourse.objects.filter(courseid=i))
             quizNum=len(Quiz.objects.filter(courseid=i))
             message['courselist'].append({'coursename':i.coursename,'detail':i.detail,'url':i.url,'teachername':i.teachername,'peoplenum':peopleNum,'quiznum':quizNum})
-    if type==0:
-        pass
+    if type=='0':
+        user=User.objects.filter(username=userName).first()
+        userCourse=UserCourse.objects.filter(studentid=user)
+        for i in userCourse:
+            quizList=Quiz.objects.filter(courseid=i.courseid)
+            quizNum = len(quizList)
+            solvedNum=0
+            for j in range(quizNum):
+                if Answerlist.objects.filter(quizid=quizList[j], status='ACCEPTED',userid=user).first() !=None:
+                    solvedNum+=1
+            message['courselist'].append(
+                {'coursename': i.courseid.coursename, 'detail': i.courseid.detail, 'url': i.courseid.url, 'teachername': i.courseid.teachername,
+                 'solvednum': solvedNum, 'quiznum': quizNum})
+
     return JsonResponse(message)
 
 def modifyCourse(request):
