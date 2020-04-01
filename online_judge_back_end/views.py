@@ -423,7 +423,37 @@ def deleteCourse(request):
     course = Course.objects.filter(url=url).first()
     course.delete()
     return JsonResponse(message)
+def selectCourse(request):
+    message={'status':'200'}
+    url=request.POST.get('url')
+    userName=request.POST.get('username')
+    studentName = request.POST.get('studentname')
+    course=Course.objects.filter(url=url).first()
+    if course==None:
+        message['status']='404'
+        return JsonResponse(message)
+    user=User.objects.filter(username=userName).first()
+    usercourse =UserCourse.objects.filter(courseid=course,studentid=user)
+    if len(usercourse)!=0:
+        message['status'] = '403'
+        return JsonResponse(message)
+    usercourse=UserCourse(courseid=course,studentid=user,studentname=studentName)
 
+    usercourse.save()
+    quiznum=len(Quiz.objects.filter(courseid=course))
+    message['newcourse'] = {'coursename': course.coursename, 'detail': course.detail, 'url': course.url, 'teachername': course.teachername,
+                            'solvednum': 0, 'quiznum': quiznum}
+    return JsonResponse(message)
+
+def deleteSelectedCourse(request):
+    message = {'status': '200'}
+    url = request.POST.get('url')
+    userName = request.POST.get('username')
+    user = User.objects.filter(username=userName).first()
+    course = Course.objects.filter(url=url).first()
+    courseSelected=UserCourse.objects.filter(courseid=course,studentid=user).first()
+    courseSelected.delete()
+    return JsonResponse(message)
 
 #########################
 class judgeThread (threading.Thread):

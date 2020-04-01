@@ -33,4 +33,7 @@ urlpatterns = [
     path('api/modifycourse/',views.modifyCourse),
     path('api/addcourse/',views.addCourse),
     path('api/deletecourse/',views.deleteCourse),
+    path('api/selectcourse/',views.selectCourse),
+    path('api/deleteselectedcourse/',views.deleteSelectedCourse),
+
 ]
