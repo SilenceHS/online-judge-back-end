@@ -135,9 +135,13 @@ def mail(receiver, key):
     return ret
 
 def quizList(request,courseurl,username):
-    message={"status":404,"quizList":[]}
-    if courseurl=="loDjDEx":
-        quizlist=Quiz.objects.filter(courseid=1)
+    message={"status":404,"quizList":[],"coursename":""}
+    course = Course.objects.filter(url=courseurl).first()
+    user = User.objects.filter(username=username).first()
+    userCourse = UserCourse.objects.filter(courseid=course, studentid=user).first()
+    if courseurl=="loDjDEx" or user.type!=0 or userCourse!=None:#如果是官方题库
+        quizlist=Quiz.objects.filter(courseid=course)
+        message["coursename"]=course.coursename
         for i in quizlist:
             userr=User.objects.filter(username=username)
             status=Answerlist.objects.filter(userid=userr[0].id,status="ACCEPTED",quizid=i.id)
@@ -151,7 +155,10 @@ def quizList(request,courseurl,username):
 
 def getQuiz(request,courseurl,quizurl,username):
     message = {"status": 404, "quiz":{}}
-    if courseurl=="loDjDEx":
+    course = Course.objects.filter(url=courseurl).first()
+    user = User.objects.filter(username=username).first()
+    userCourse = UserCourse.objects.filter(courseid=course, studentid=user).first()
+    if courseurl=="loDjDEx" or user.type != 0 or userCourse != None:
         quiz=Quiz.objects.filter(url=quizurl)
         if len(quiz)==0:
             return JsonResponse(message)
@@ -163,8 +170,8 @@ def getQuiz(request,courseurl,quizurl,username):
             message["accepted"]=False
         message["quiz"]=json.loads(serializers.serialize("json",quiz))
         message["status"]=200
-
         return JsonResponse(message)
+
 
 def postQuiz(request):
     message = {"status": '200',"tempid":""}
@@ -236,11 +243,12 @@ def addQuiz(request):
     timelimit=request.POST.get('timelimit')
     memorylimit=request.POST.get('memorylimit')
     testcase=request.POST.get('testcase')
-    courseid=request.POST.get('courseid')
+    courseurl=request.POST.get('courseurl')
     language=request.POST.get('language')
     level = request.POST.get('level')
     tag=request.POST.get('tag')
-    if courseid=="1" and type=='2':
+    course = Course.objects.filter(url=courseurl)
+    if (courseurl=="loDjDEx" and type=='2') or (len(course)!=0 and type=='1'):
         pat = re.compile("(.*?)\n--InEnd--\n(.*?)\n--OutEnd--\n*", re.DOTALL)
         testCaseList=pat.findall(testcase)
         url=urlGenerator()
@@ -254,8 +262,6 @@ def addQuiz(request):
             f = open(testCasePath + "/" + str(i + 1) + ".out", "w")
             f.writelines(testCaseList[i][1])
             f.close()
-
-        course=Course.objects.filter(id=1)
         quiz=Quiz(url=url,
                   courseid=course[0],
                   name=name,
@@ -277,7 +283,7 @@ def deleteQuiz(request):
     username=request.POST.get('username')
     quiz=Quiz.objects.filter(id=qid)
     user=User.objects.filter(username=username)
-    if len(user)==1 and user[0].type==2:
+    if len(user)==1 and user[0].type!=0:
         shutil.rmtree(testCaseRoot+quiz[0].url)
         quiz[0].delete()
         return JsonResponse(message)
@@ -328,12 +334,13 @@ def modifyQuiz(request):
     timelimit = request.POST.get('timelimit')
     memorylimit = request.POST.get('memorylimit')
     testcase = request.POST.get('testcase')
-    courseid = request.POST.get('courseid')
+    courseurl = request.POST.get('courseurl')
     language = request.POST.get('language')
     level = request.POST.get('level')
     tag = request.POST.get('tag')
     url = request.POST.get('url')
-    if courseid == "1" and type == '2':
+    course = Course.objects.filter(url=courseurl)
+    if (courseurl == "loDjDEx" and type == '2') or (len(course)!=0 and type=='1'):
         pat = re.compile("(.*?)\n--InEnd--\n(.*?)\n--OutEnd--\n*", re.DOTALL)
         testCaseList = pat.findall(testcase)
         testCasePath = testCaseRoot + url
@@ -384,7 +391,7 @@ def getCourseList(request,userName,type):
                     solvedNum+=1
             message['courselist'].append(
                 {'coursename': i.courseid.coursename, 'detail': i.courseid.detail, 'url': i.courseid.url, 'teachername': i.courseid.teachername,
-                 'solvednum': solvedNum, 'quiznum': quizNum})
+                 'solvednum': solvedNum, 'quiznum': quizNum,'name':i.studentname})
 
     return JsonResponse(message)
 
@@ -454,7 +461,17 @@ def deleteSelectedCourse(request):
     courseSelected=UserCourse.objects.filter(courseid=course,studentid=user).first()
     courseSelected.delete()
     return JsonResponse(message)
-
+def modifyStudentCourseName(request):
+    message = {'status': '200'}
+    name = request.POST.get('name')
+    url = request.POST.get('url')
+    userName=request.POST.get('username')
+    course = Course.objects.filter(url=url).first()
+    user=User.objects.filter(username=userName).first()
+    userCourse=UserCourse.objects.filter(courseid=course,studentid=user).first()
+    userCourse.studentname=name
+    userCourse.save()
+    return JsonResponse(message)
 #########################
 class judgeThread (threading.Thread):
     def __init__(self):
@@ -508,9 +525,3 @@ thread1.daemon
 thread2 = redisToMysqlThread()
 thread2.start()
 thread2.daemon
-
-
-
-
-
-

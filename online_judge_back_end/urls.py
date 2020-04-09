@@ -35,5 +35,7 @@ urlpatterns = [
     path('api/deletecourse/',views.deleteCourse),
     path('api/selectcourse/',views.selectCourse),
     path('api/deleteselectedcourse/',views.deleteSelectedCourse),
+    path('api/modifystudentcoursename/',views.modifyStudentCourseName),
+
 
 ]
