@@ -341,7 +341,7 @@ def modifyQuiz(request):
     url = request.POST.get('url')
     course = Course.objects.filter(url=courseurl)
     if (courseurl == "loDjDEx" and type == '2') or (len(course)!=0 and type=='1'):
-        pat = re.compile("(.*?)\n--InEnd--\n(.*?)\n--OutEnd--\n*", re.DOTALL)
+        pat = re.compile("(.*?)\n*--InEnd--\n(.*?)\n--OutEnd--\n*", re.DOTALL)
         testCaseList = pat.findall(testcase)
         testCasePath = testCaseRoot + url
         if os.path.exists(testCasePath):
