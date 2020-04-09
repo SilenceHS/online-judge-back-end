@@ -5,13 +5,15 @@ import random
 import time, datetime
 from django.core import serializers
 from django.db.models import Q
-from django.http import JsonResponse
+from django.http import JsonResponse, FileResponse
 from django.core.mail import send_mail
+from django.utils.encoding import escape_uri_path
 from redis import StrictRedis
 from online_judge_back_end.models import User, Quiz, Answerlist, Course,UserCourse
 import os
 import redis
 import threading
+from openpyxl import Workbook
 from online_judge_back_end import judgeCore
 import re
 ######DO NOT INSTALL Crypto!!!!!!######
@@ -449,7 +451,7 @@ def selectCourse(request):
     usercourse.save()
     quiznum=len(Quiz.objects.filter(courseid=course))
     message['newcourse'] = {'coursename': course.coursename, 'detail': course.detail, 'url': course.url, 'teachername': course.teachername,
-                            'solvednum': 0, 'quiznum': quiznum}
+                            'solvednum': 0, 'quiznum': quiznum,'name':studentName}
     return JsonResponse(message)
 
 def deleteSelectedCourse(request):
@@ -472,6 +474,50 @@ def modifyStudentCourseName(request):
     userCourse.studentname=name
     userCourse.save()
     return JsonResponse(message)
+def showRank(request,url,userName):
+    message = {'status': '200','studentranklist':[],'showtype':1,'allnum':0,'coursename':''}
+    user=User.objects.filter(username=userName).first()
+    message['showtype']=user.type
+    course = Course.objects.filter(url=url).first()
+    message['coursename'] = course.coursename
+    quizList=Quiz.objects.filter(courseid=course)
+    message['allnum'] = len(quizList)
+    userCourse=UserCourse.objects.filter(courseid=course)
+    studentRankList=[]
+    for i in userCourse:
+        count=0
+        for k in quizList:
+            answerList=Answerlist.objects.filter(status="ACCEPTED",quizid=k,userid=i.studentid).first()
+            if answerList!=None:
+                count+=1
+        m={"studentName":i.studentname,"solved":count}
+        studentRankList.append(m)
+    message['studentranklist']=studentRankList
+    return JsonResponse(message)
+def getExcel(request,url):
+    course = Course.objects.filter(url=url).first()
+    quizList = Quiz.objects.filter(courseid=course)
+    userCourse = UserCourse.objects.filter(courseid=course)
+    wb = Workbook()
+    ws = wb.active
+    ws.cell(row=1,column=1,value='姓名')
+    ws.cell(row=1, column=2, value='已答题数')
+    rowCount = 2
+    for i in userCourse:
+        count = 0
+        for k in quizList:
+            answerList = Answerlist.objects.filter(status="ACCEPTED", quizid=k, userid=i.studentid).first()
+            if answerList != None:
+                count += 1
+        ws.cell(row=rowCount,column=1,value=i.studentname)
+        ws.cell(row=rowCount, column=2,value=count)
+        rowCount+=1
+    wb.save('sb110.xlsx')
+    file=open('sb110.xlsx','rb')
+    response=FileResponse(file)
+    response['Content-Type'] = 'application/octet-stream'
+    response['Content-Disposition'] = 'attachment;filename="{0}"'.format(escape_uri_path(course.coursename+'成绩汇总.xlsx'))
+    return response
 #########################
 class judgeThread (threading.Thread):
     def __init__(self):
