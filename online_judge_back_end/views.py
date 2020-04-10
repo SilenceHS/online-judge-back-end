@@ -142,7 +142,7 @@ def quizList(request,courseurl,username):
     course = Course.objects.filter(url=courseurl).first()
     user = User.objects.filter(username=username).first()
     userCourse = UserCourse.objects.filter(courseid=course, studentid=user).first()
-    if courseurl=="loDjDEx" or user.type!=0 or userCourse!=None:#如果是官方题库
+    if courseurl=="loDjDEx" or user.type!=0 or userCourse!=None:
         quizlist=Quiz.objects.filter(courseid=course)
         message["coursename"]=course.coursename
         for i in quizlist:
@@ -152,7 +152,13 @@ def quizList(request,courseurl,username):
                 status="ACCEPTED"
             else:
                 status=""
-            message["quizList"].append({"id":i.id,"name":i.name,"level":i.level,"url":i.url,"status":status,"tag":i.tag})
+            solved=len(Answerlist.objects.filter(status="ACCEPTED",quizid=i.id))
+            allcount=len(Answerlist.objects.filter(quizid=i.id))
+            if allcount==0:
+                percent=0
+            else:
+                percent=str(round(solved/allcount*100,2))+"%"
+            message["quizList"].append({"id":i.id,"name":i.name,"level":i.level,"url":i.url,"status":status,"tag":i.tag,"solved":solved,"percent":percent})
         message["status"]=200
     return JsonResponse(message)
 
@@ -550,6 +556,9 @@ def getMainCount(request):
 
     oleList = answerList.filter(status='OUTPUT_LIMIT_EXCEEDED')
     message['oleCount'] = len(oleList)
+
+    nzeList = answerList.filter(status='NON_ZERO_EXIT_CODE')
+    message['nzeCount'] = len(nzeList)
     return JsonResponse(message)
 
 def resetPass(request):
@@ -577,6 +586,24 @@ def resetPass(request):
         str_md5 = n.hexdigest()
         user.password = str_md5
         user.save()
+    return JsonResponse(message)
+def getHistoryList(request,url,userName):
+    message = {'status': '200','historyList':[]}
+    quiz=Quiz.objects.filter(url=url).first()
+    message['quizname']=quiz.name
+    user=User.objects.filter(username=userName).first()
+    answerList=Answerlist.objects.filter(userid=user,quizid=quiz)
+    for i in answerList:
+        history={}
+        history['id']=i.id
+        history['language'] = i.language
+        history['status']=i.status
+        history['date']=i.date
+        history['time']=i.usetime
+        history['memory']=i.usememory
+        f=open(i.code,'rb')
+        history['code']=f.read().decode()
+        message['historyList'].append(history)
     return JsonResponse(message)
 
 #########################

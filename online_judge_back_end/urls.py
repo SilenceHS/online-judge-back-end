@@ -40,6 +40,7 @@ urlpatterns = [
     path('api/getExcel/<str:url>', views.getExcel),
     path('api/getMainCount/', views.getMainCount),
     path('api/resetPass/', views.resetPass),
+    path('api/gethistorylist/<str:url>/<str:userName>', views.getHistoryList),
 
 
 
