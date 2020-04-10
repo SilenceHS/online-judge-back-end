@@ -16,6 +16,7 @@ import threading
 from openpyxl import Workbook
 from online_judge_back_end import judgeCore
 import re
+import hashlib
 ######DO NOT INSTALL Crypto!!!!!!######
 #######please use 'pip install pycryptodome'######
 import base64
@@ -490,7 +491,7 @@ def showRank(request,url,userName):
             answerList=Answerlist.objects.filter(status="ACCEPTED",quizid=k,userid=i.studentid).first()
             if answerList!=None:
                 count+=1
-        m={"studentName":i.studentname,"solved":count}
+        m={'studentId':i.studentid.id,"studentName":i.studentname,"solved":count}
         studentRankList.append(m)
     message['studentranklist']=studentRankList
     return JsonResponse(message)
@@ -518,6 +519,66 @@ def getExcel(request,url):
     response['Content-Type'] = 'application/octet-stream'
     response['Content-Disposition'] = 'attachment;filename="{0}"'.format(escape_uri_path(course.coursename+'成绩汇总.xlsx'))
     return response
+
+def getMainCount(request):
+    message = {'status': '200'}
+    userName=request.POST.get('username');
+    user=User.objects.filter(username=userName).first()
+    answerList=Answerlist.objects.filter(userid=user)
+    message['allCount']=len(answerList)
+
+    acList=answerList.filter(status='ACCEPTED')
+    message['acCount'] = len(acList)
+
+    waList=answerList.filter(status='WRONG_ANSWER')
+    message['waCount'] = len(waList)
+
+    ceList=answerList.filter(status='COMPILATION_ERROR')
+    message['ceCount'] = len(ceList)
+
+    peList=answerList.filter(status='PRESENTATION_ERROR')
+    message['peCount'] = len(peList)
+
+    tleList=answerList.filter(status='TIME_LIMIT_EXCEEDED')
+    message['tleCount'] = len(tleList)
+
+    mleList = answerList.filter(status='MEMORY_LIMIT_EXCEEDED')
+    message['mleCount'] = len(mleList)
+
+    reList = answerList.filter(status='RUNTIME_ERROR')
+    message['reCount'] = len(reList)
+
+    oleList = answerList.filter(status='OUTPUT_LIMIT_EXCEEDED')
+    message['oleCount'] = len(oleList)
+    return JsonResponse(message)
+
+def resetPass(request):
+    message = {'status': '200'}
+    newpassword = request.POST.get('newpassword')
+    if newpassword ==None:
+        id = request.POST.get('id')
+        user = User.objects.filter(id=id).first()
+        user.password="e10adc3949ba59abbe56e057f20f883e"
+        user.save()
+    else:
+        username=request.POST.get('username')
+        user = User.objects.filter(username=username).first()
+        m = hashlib.md5()
+        b=request.POST.get('oldpassword').encode(encoding='utf-8')
+        m.update(b)
+        str_md5 = m.hexdigest()
+        if user.password!=str_md5:
+            message['status']=403
+            return JsonResponse(message)
+
+        newpassword=newpassword.encode(encoding='utf-8')
+        n = hashlib.md5()
+        n.update(newpassword)
+        str_md5 = n.hexdigest()
+        user.password = str_md5
+        user.save()
+    return JsonResponse(message)
+
 #########################
 class judgeThread (threading.Thread):
     def __init__(self):

@@ -38,6 +38,8 @@ urlpatterns = [
     path('api/modifystudentcoursename/',views.modifyStudentCourseName),
     path('api/showrank/<str:url>/<str:userName>', views.showRank),
     path('api/getExcel/<str:url>', views.getExcel),
+    path('api/getMainCount/', views.getMainCount),
+    path('api/resetPass/', views.resetPass),
 
 
 
